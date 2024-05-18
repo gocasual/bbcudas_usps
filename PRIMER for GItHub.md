@@ -11,4 +11,6 @@ https://www.youtube.com/watch?v=2ENTVJQ-1rM
 
 ### General Info
 https://docs.github.com/en
+https://docs.github.com/en/get-started/start-your-journey
+https://docs.github.com/en/get-started/start-your-journey/git-and-github-learning-resources
 
