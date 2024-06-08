@@ -10,3 +10,4 @@ query = '''
 
 data = query_executor(query)
 G = graph_from_cypher(data)
+print(list(G.nodes.data()))

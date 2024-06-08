@@ -4,6 +4,7 @@ put it into a networkX graph to be able to run networkX algos
 '''
 from neo4j import GraphDatabase
 from neo4j.graph import Node, Relationship
+from neo4j.data import Record
 import networkx as nx
 
 
@@ -27,16 +28,24 @@ def graph_from_cypher(data):
         G.add_edge(u, v, key=eid, type_=relation.type, properties=dict(relation))
 
     for d in data:
-        for entry in d:
-            print(type(entry))
-            for k, v in entry.items():
-                if v:
-                    add_node(v)
-                elif #Record
-                elif isinstance(v, Relationship):
-                    add_edge(v)
-                else:
-                    pass
+        try:
+            for entry in d:
+                for k, v in entry.items():
+                    if isinstance(v, Node):
+                        add_node(v)
+                    elif isinstance(v, Record):
+                        add_node(v)
+                        add_edge(v)    
+                    elif isinstance(v, Relationship):
+                        add_edge(v)
+                    else:
+                        pass
+        except (TypeError, AttributeError):
+            if TypeError:
+                print('Type error')
+            if AttributeError:
+                print('Attribute error')
+            pass
     return G
 
 
