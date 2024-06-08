@@ -1,0 +1,6 @@
+env
+.env
+.venv
+*.zip
+*.config
+raw-data/
