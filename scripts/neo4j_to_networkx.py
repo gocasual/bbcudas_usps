@@ -3,7 +3,7 @@ Script that defines function to query data from Neo4J and
 put it into a networkX graph to be able to run networkX algos
 '''
 from neo4j import GraphDatabase
-from neo4j.types.graph import Node, Relationship
+from neo4j.graph import Node, Relationship
 import networkx as nx
 
 
@@ -27,21 +27,26 @@ def graph_from_cypher(data):
         G.add_edge(u, v, key=eid, type_=relation.type, properties=dict(relation))
 
     for d in data:
-        for entry in d.values():
-            if isinstance(entry, Node):
-                add_node(entry)
-            elif isinstance(entry, Relationship):
-                add_edge(entry)
-            else:
-                raise TypeError("Unrecognized object")
+        for entry in d:
+            print(type(entry))
+            for k, v in entry.items():
+                if v:
+                    add_node(v)
+                elif #Record
+                elif isinstance(v, Relationship):
+                    add_edge(v)
+                else:
+                    pass
     return G
 
-driver = GraphDatabase.driver('bolt://localhost:7687', auth=("neo4j", "hunter2"))
-query = """
-MATCH (p:Person)-[:ACTED_IN]->(m:Movie)
-WHERE toLower(m.title) CONTAINS "you"
-RETURN *
-"""
-with driver.session() as session:
-    result = session.run(query)
-    G = graph_from_cypher(result.data())
+
+if __name__=='__main__':
+    driver = GraphDatabase.driver('bolt://localhost:7687', auth=("neo4j", "hunter2"))
+    query = """
+    MATCH (p:Person)-[:ACTED_IN]->(m:Movie)
+    WHERE toLower(m.title) CONTAINS "you"
+    RETURN *
+    """
+    with driver.session() as session:
+        result = session.run(query)
+        G = graph_from_cypher(result.data())

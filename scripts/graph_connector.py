@@ -22,14 +22,14 @@ def driver_connect(original_function):
 
         driver = GraphDatabase.driver(URI, auth=AUTH)
         driver.verify_connectivity()
-        result = original_function(driver)
+        result = original_function(driver, *args)
         driver.close()
         return result
     return driver_action 
 
 
 @driver_connect
-def query_executor(driver):
+def query_executor(driver, query):
     records = driver.execute_query(
         query,
         database_="neo4j"
