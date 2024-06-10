@@ -2,7 +2,6 @@
 Script that defines function to query data from Neo4J and
 put it into a networkX graph to be able to run networkX algos
 '''
-from neo4j import GraphDatabase
 from neo4j.graph import Node, Relationship
 from neo4j.data import Record
 import networkx as nx
@@ -47,15 +46,3 @@ def graph_from_cypher(data):
                 print('Attribute error')
             pass
     return G
-
-
-if __name__=='__main__':
-    driver = GraphDatabase.driver('bolt://localhost:7687', auth=("neo4j", "hunter2"))
-    query = """
-    MATCH (p:Person)-[:ACTED_IN]->(m:Movie)
-    WHERE toLower(m.title) CONTAINS "you"
-    RETURN *
-    """
-    with driver.session() as session:
-        result = session.run(query)
-        G = graph_from_cypher(result.data())
