@@ -1,13 +1,23 @@
 from scripts.graph_connector import query_executor
 from scripts.neo4j_to_networkx import graph_from_cypher
 from scripts.louvain_community_detection import louvain_community
+from scripts.sample_queries import *
 
-query = '''
-        MATCH (m:mailPiece)-[r:`goes to`] -> (o:destination) 
-        WHERE o.destaddress_STATENAME = "Florida"
-        RETURN m, r, o
-        '''
 
-data = query_executor(query)
+data = query_executor(query_all_data)
+# print(data.keys)
+# print("\n")
+# print(data.records)
+# print("\n")
+# print(data.summary.plan)
+# print("\n")
+
 G = graph_from_cypher(data)
-louvain_community(G)
+print(G.size)
+community = louvain_community(G)
+print(community)
+print(len(community))
+for communities in community:
+        for node_id in communities:
+                print(G.nodes[node_id])
+                print('\n')

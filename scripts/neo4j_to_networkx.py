@@ -2,7 +2,6 @@
 Script that defines function to query data from Neo4J and
 put it into a networkX graph to be able to run networkX algos
 '''
-from neo4j import GraphDatabase
 from neo4j.graph import Node, Relationship
 from neo4j.data import Record
 import networkx as nx
