@@ -19,3 +19,6 @@ def louvain_community(G):
     end = time.time()
     print(f'elapsed time: {end-start}')
     return partition
+
+
+def 
