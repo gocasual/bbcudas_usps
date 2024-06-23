@@ -10,7 +10,7 @@ from scripts.louvain_community_detection import louvain_community
 from scripts.sample_queries import *
 
 
-data = query_executor(query_all_data v )
+data = query_executor(query_company_delinked_mid)
 
 
 G = graph_from_cypher(data)
