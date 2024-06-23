@@ -30,3 +30,5 @@ query_company_fraud2 = '''
     WHERE mid.delinked = "TRUE" OR mp.firstzip_startzip_diff = "TRUE"
     RETURN co, o, mid, ma, mp, gt, des
     '''
+
+# 

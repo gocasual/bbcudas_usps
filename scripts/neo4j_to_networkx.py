@@ -41,10 +41,15 @@ def graph_from_cypher(data):
                         pass
         except (TypeError, AttributeError):
             if TypeError:
-                print('Type error')
+                print('Node or Edge import error - Type error - continuing')
             if AttributeError:
-                print('Attribute error')
+                print('Node or Edge import error - Attribute error - continuing')
             pass
+    
+    num_nodes = G.number_of_nodes()
+    num_edges = G.number_of_edges()
+    print(f"total nodes: {num_nodes}, total edges: {num_edges}")
+    
     return G
 
 
