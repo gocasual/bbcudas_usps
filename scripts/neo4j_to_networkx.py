@@ -8,7 +8,7 @@ import networkx as nx
 
 
 def graph_from_cypher(data):
-    G = nx.MultiDiGraph()
+    G = nx.MultiGraph()
 
     def add_node(node):
         u = node.id
