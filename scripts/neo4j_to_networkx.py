@@ -8,7 +8,7 @@ import networkx as nx
 
 
 def graph_from_cypher(data):
-    G = nx.MultiDiGraph()
+    G = nx.MultiGraph()
 
     def add_node(node):
         u = node.id
@@ -31,18 +31,24 @@ def graph_from_cypher(data):
             for entry in d:
                 for k, v in entry.items():
                     if isinstance(v, Node):
-                        add_node(v)
-                    elif isinstance(v, Record):
-                        add_node(v)
-                        add_edge(v)    
+                        add_node(v)  
                     elif isinstance(v, Relationship):
                         add_edge(v)
                     else:
                         pass
         except (TypeError, AttributeError):
             if TypeError:
-                print('Type error')
+                print('Node or Edge import error - Type error - continuing')
             if AttributeError:
-                print('Attribute error')
+                print('Node or Edge import error - Attribute error - continuing')
             pass
+    
+    num_nodes = G.number_of_nodes()
+    num_edges = G.number_of_edges()
+    print(f"total nodes: {num_nodes}, total edges: {num_edges}")
+    
     return G
+
+
+def dataframe_of_edges(G):
+    pass
