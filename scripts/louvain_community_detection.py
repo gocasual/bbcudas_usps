@@ -12,6 +12,7 @@ import matplotlib
 from dotenv import load_dotenv
 import time
 import json
+import os
 
 matplotlib.use('Agg')
 load_dotenv()
@@ -84,21 +85,8 @@ def draw_communities(G, colors, communities):
     return plt
 
 
-def community_node_count(G, communities):
-    '''
-    function to count the nodes in a community
-    '''
-    pass
-
-
-def community_density():
-    '''
-    function to calculate the density of each community
-    '''
-    pass
-
-
 def write_communities_json(communities):
+    result_path = os.path.join('.', 'data', 'result_community.json')
     community_dict = {f'{index}':list(community) for index, community in enumerate(communities)}
-    with open('result_community.json', 'w') as f:
+    with open(result_path, 'w') as f:
         json.dump(community_dict, f, indent=2)

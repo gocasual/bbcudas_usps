@@ -1,0 +1,5 @@
+matplotlib==3.9.0
+neo4j==5.22.0
+networkx==3.3
+pandas==2.2.2
+python-dotenv==1.0.1
