@@ -4,3 +4,4 @@ env
 *.zip
 *.config
 raw-data/
+test.py
