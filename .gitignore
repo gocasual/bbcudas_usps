@@ -7,4 +7,4 @@ raw-data/
 test.py
 EDA/spark-3.5.1-bin-hadoop3
 .DS_Store
-/scripts/__pycache__/
+scripts/__pycache__/
