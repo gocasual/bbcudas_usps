@@ -8,15 +8,29 @@ potential of fraudulent activity.
 '''
 import networkx as nx
 
-def potential_fraud_subgraph(G, community):
+
+def make_unfrozen_subgraph(G, community):
+    sub_graph = G.subgraph(community)
+    unfrozen_graph = nx.Graph(sub_graph)
+    return unfrozen_graph
+
+
+def community_density(unfrozen_graph, weight=0.3):
+    '''
+    calculate and return the density of a given community. 
+    '''
+    density = nx.density(unfrozen_graph)
+    weighted_density = density * weight
+    return weighted_density
+
+
+def potential_fraud_subgraph(unfrozen_graph):
     '''1. get nodes in community
        2. create a subgraph
        2a. drop all nodes with label 'destination'
        2b. remove all edges with label 'goes_to' and 'mails'
        3. filter the subgraph for nodes that could be potential fraud relationships
        '''
-    sub_graph = G.subgraph(community)
-    unfrozen_graph = nx.Graph(sub_graph)
     for node, data in list(unfrozen_graph.nodes(data=True)):
         if 'labels' in data and 'destination' in data['labels']:
             unfrozen_graph.remove_node(node)
@@ -28,7 +42,7 @@ def potential_fraud_subgraph(G, community):
     return unfrozen_graph
 
 
-def potential_fraud_score(graph):
+def potential_fraud_score(graph, weight=0.7):
     ''' 4. calculate the total number of potential fraud count_fraud_indicators
         5. calculate total number of possible relationships
         6. return the community fraud score
@@ -40,5 +54,17 @@ def potential_fraud_score(graph):
 
     total_nodes = graph.number_of_nodes()
     fraud_density = (2 * sum_fraud_edges) / (total_nodes * (total_nodes - 1))
+    weighted_density = fraud_density * weight
+    return weighted_density
 
-    return fraud_density
+
+def community_score(G, community, d_weight=0.2, f_weight=0.8):
+    unfrozen_graph = make_unfrozen_subgraph(G, community)
+    density = community_density(unfrozen_graph, weight=d_weight)
+    fraud_subgraph = potential_fraud_subgraph(unfrozen_graph)
+    fraud_density = potential_fraud_score(fraud_subgraph, weight=f_weight)
+    score = density + fraud_density
+    print(f'density: {density} ' \
+          f'fraud_density: {fraud_density} ' \
+          f'score: {score}' ) 
+    return score
