@@ -249,7 +249,8 @@ def get_indicator_type(df_nodes, df_edges):
     return df_sums
 
 
-def get_communities_stats(communities):
+
+def get_communities_stats(G,communities):
   # Initialize lists to store the data
   community_id = []
   densities = []
