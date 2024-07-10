@@ -69,25 +69,27 @@ def log_transform(score1, score2):
     return score1 + math.log(score2, 10)
 
 
-def community_score(G, community, d_weight=1, f_weight=1, type='weighted'):
+def community_score(G, community, d_weight=1, f_weight=1, type='weighted',verbose = False):
     unfrozen_graph = make_unfrozen_subgraph(G, community)
     if type == 'weighted':
         density = community_density(unfrozen_graph, weight=d_weight)
         fraud_subgraph = potential_fraud_subgraph(unfrozen_graph)
         fraud_density = potential_fraud_score(fraud_subgraph, weight=f_weight)
         score = density + fraud_density
-        print(f'density: {density} ' \
-            f'fraud_density: {fraud_density} ' \
-            f'score: {score}' ) 
+        if verbose:
+            print(f'density: {density} ' \
+                f'fraud_density: {fraud_density} ' \
+                f'score: {score}' ) 
     elif type == 'log':
         density = community_density(unfrozen_graph, weight=1)
         fraud_subgraph = potential_fraud_subgraph(unfrozen_graph)
         fraud_density = potential_fraud_score(fraud_subgraph, weight=1)
         plus_one = fraud_density + 1
         score = log_transform(density, plus_one)
-        print(f'density: {density} ' \
-            f'fraud_density: {fraud_density} ' \
-            f'score: {score}' ) 
+        if verbose:
+            print(f'density: {density} ' \
+                f'fraud_density: {fraud_density} ' \
+                f'score: {score}' ) 
     else:
         print('type must be weighted or log')
     return density,fraud_density,score
@@ -156,7 +158,7 @@ def get_perc_fraud_indicators(df_edges, df_nodes):
 
     # Special Handling for 'part_of' Edge Type
     if 'part_of' in df_weights['type'].values:  # Check if 'part_of' type exists
-        print('Getting counts for the two indicator in the part of edge...')
+        #print('Getting counts for the two indicator in the part of edge...')
 
         # Placeholder for get_indicator_type function
         df_part_of = get_indicator_type(df_nodes, df_edges)  
@@ -204,7 +206,7 @@ def get_indicator_type(df_nodes, df_edges):
 
     # Filter for high-weight 'part_of' edges
     high_weight_part_of = df_edges[(df_edges['type_'] == 'part_of') & (df_edges['weight'] > 1)]
-    print('here')
+    
     # Get node properties for target nodes of high-weight 'part_of' edges
     target_nodes_ids = high_weight_part_of['target'].tolist()
     target_nodes = df_nodes[df_nodes.index.isin(target_nodes_ids)].copy()
@@ -212,7 +214,7 @@ def get_indicator_type(df_nodes, df_edges):
     target_nodes = pd.concat([target_nodes.drop('properties', axis=1), target_nodes_props], axis=1)
     target_nodes = target_nodes.merge(high_weight_part_of[['target', 'weight']], left_index=True, right_on='target')
     target_nodes = target_nodes.set_index('target')
-    print(target_nodes.shape)
+    
     # Get node properties for source nodes of high-weight 'part_of' edges
     source_nodes_ids = high_weight_part_of['source'].tolist()
     source_nodes = df_nodes[df_nodes.index.isin(source_nodes_ids)].copy()
@@ -245,3 +247,67 @@ def get_indicator_type(df_nodes, df_edges):
     df_sums['type'] = 'part_of'  # Add the original 'part_of' type
 
     return df_sums
+
+
+def get_communities_stats(communities):
+  # Initialize lists to store the data
+  community_id = []
+  densities = []
+  fraud_densities = []
+  scores = []
+  num_nodes = []
+  num_edges = []
+  # Loop through communities and collect data
+  for index,community in enumerate(communities):
+    density, fraud_density, score = community_score(G, community, type='log')
+    community_subgraph = make_unfrozen_subgraph(G,community)
+    nodes = community_subgraph.number_of_nodes()
+    edges = community_subgraph.number_of_edges()
+
+    community_id.append(index)
+    densities.append(density)
+    fraud_densities.append(fraud_density)
+    scores.append(score)
+    num_nodes.append(nodes)
+    num_edges.append(edges)
+
+  # Create a dictionary from the collected data
+  data = {"Community_id": community_id,
+      'Density': densities,
+      'Fraud_Density': fraud_densities,
+      'Score': scores,
+      'N_Nodes': num_nodes,
+      'N_Edges': num_edges
+  }
+
+  # Create a Pandas DataFrame from the dictionary
+  df = pd.DataFrame(data)
+  return df
+
+def get_fraud_perc_table(G,communities):
+  """
+  Calculates and aggregates fraud-related percentage indicators for multiple communities within a graph.
+
+  This function iterates through a list of communities, extracts subgraphs relevant to potential fraud,
+  and computes various percentage-based fraud indicators. The results are compiled into a pandas DataFrame.
+
+  Args:
+      G (networkx.Graph): The input graph.
+      communities: A list of communities
+                    to analyze within the graph.
+
+  Returns:
+      pandas.DataFrame: A DataFrame where each row represents a community (identified by the 'Community_id' index)
+                        and the columns contain the calculated percentage-based fraud indicators.
+    """
+  all_indicators_df = pd.DataFrame() 
+  for idx,community in enumerate(communities):
+    community_subgraph = make_unfrozen_subgraph(G,community)
+    fraud_subgraph = potential_fraud_subgraph(community_subgraph)
+    df_n_fraud, df_e_fraud = graph_to_pandas(fraud_subgraph,False)
+    df_indicators = get_perc_fraud_indicators(df_e_fraud,df_n_fraud)
+    df_indicators['Community_id'] = idx
+    all_indicators_df = pd.concat([all_indicators_df,df_indicators])  # Append to the main DataFrame
+
+  all_indicators_df = all_indicators_df.set_index('Community_id')
+  all_indicators_df
