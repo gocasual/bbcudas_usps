@@ -90,7 +90,7 @@ def community_score(G, community, d_weight=1, f_weight=1, type='weighted'):
             f'score: {score}' ) 
     else:
         print('type must be weighted or log')
-    return score
+    return density,fraud_density,score
 
 def graph_to_pandas(graph,debug=False):
   """
@@ -104,8 +104,6 @@ def graph_to_pandas(graph,debug=False):
     A tuple of two Pandas DataFrames: (df_nodes, df_edges)
   """
 
-  print(f"Community has {graph.number_of_nodes()} nodes and {graph.number_of_edges()} edges.")  # Print graph summary
-
   # Extract node data into a DataFrame
   nodes_dict = dict(graph.nodes(data=True))
   df_nodes = pd.DataFrame.from_dict(nodes_dict, orient='index')
@@ -118,6 +116,7 @@ def graph_to_pandas(graph,debug=False):
   df_edges = pd.concat([df_edges.drop('properties', axis=1), weights], axis=1)
 
   if debug:
+    print(f"Community has {graph.number_of_nodes()} nodes and {graph.number_of_edges()} edges.")  # Print graph summary
     print(f'Nodes:\n',df_nodes.labels.value_counts())  # Print node label counts
     print(f'Edges:\n',df_edges['type_'].value_counts())  # Print edge type counts
 
@@ -179,7 +178,7 @@ def get_perc_fraud_indicators(df_edges, df_nodes):
 
     else:  # No 'part_of' edges, merge type counts with original weight counts directly
         df_merged = pd.merge(df_type_counts, df_weights, on='type', how='left')
-
+        df_merged = df_merged.fillna(0)
     # Calculate percentage of weighted edges per type
     df_merged['pct'] = df_merged['weight_count'] / df_merged['count'] * 100
 
