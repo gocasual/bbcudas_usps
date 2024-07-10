@@ -205,21 +205,23 @@ def get_indicator_type(df_nodes, df_edges):
 
     # Filter for high-weight 'part_of' edges
     high_weight_part_of = df_edges[(df_edges['type_'] == 'part_of') & (df_edges['weight'] > 1)]
-
+    print('here')
     # Get node properties for target nodes of high-weight 'part_of' edges
     target_nodes_ids = high_weight_part_of['target'].tolist()
     target_nodes = df_nodes[df_nodes.index.isin(target_nodes_ids)].copy()
-    target_nodes['properties'] = target_nodes['properties'].apply(pd.Series)
+    target_nodes_props = target_nodes['properties'].apply(pd.Series)
+    target_nodes = pd.concat([target_nodes.drop('properties', axis=1), target_nodes_props], axis=1)
     target_nodes = target_nodes.merge(high_weight_part_of[['target', 'weight']], left_index=True, right_on='target')
     target_nodes = target_nodes.set_index('target')
-
+    print(target_nodes.shape)
     # Get node properties for source nodes of high-weight 'part_of' edges
     source_nodes_ids = high_weight_part_of['source'].tolist()
     source_nodes = df_nodes[df_nodes.index.isin(source_nodes_ids)].copy()
-    source_nodes['properties'] = source_nodes['properties'].apply(pd.Series)
+    source_nodes_props = source_nodes['properties'].apply(pd.Series)
+    source_nodes = pd.concat([source_nodes.drop('properties', axis=1), source_nodes_props], axis=1)
     source_nodes = source_nodes.merge(high_weight_part_of[['source', 'weight']], left_index=True, right_on='source')
     source_nodes = source_nodes.set_index('source')
-
+    print(source_nodes.shape)
 
     # Combine target and source nodes
     source_target_nodes = pd.concat([target_nodes, source_nodes])
@@ -231,13 +233,11 @@ def get_indicator_type(df_nodes, df_edges):
     df = source_target_nodes.copy()[['manifest', 'weight']]
 
     # Create 'part_of_mismatch' indicator
-    df['part_of_mismatch'] = (
-        ((df['manifest'] == False) & (df['weight'] == 4)) | 
-        ((df['manifest'] == True) & (df['weight'] == 2))
-    ).astype(int)
-
-    # Create 'part_of_manifest' indicator
-    df['part_of_manifest'] = (df['manifest'] == False).astype(int)
+    df.loc[:,'part_of_mismatch'] = (
+    ((df['manifest'] == False) & (df['weight'] == 4)) | 
+    ((df['manifest'] == True) & (df['weight'] == 2))
+      ).astype(int)
+    df.loc[:,'part_of_manifest'] = (df['manifest'] == False).astype(int)
 
     # Calculate sums for each indicator type
     df_sums = (
