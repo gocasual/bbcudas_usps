@@ -6,6 +6,7 @@ Goal of the algorithm is to return a prioritized list of
 the most influential communities that have the highest 
 potential of fraudulent activity. 
 '''
+import math
 import networkx as nx
 import pandas as pd
 
@@ -21,7 +22,7 @@ def make_unfrozen_subgraph(G, community):
     return unfrozen_graph
 
 
-def community_density(unfrozen_graph, weight=0.3):
+def community_density(unfrozen_graph, weight=1):
     '''
     calculate and return the density of a given community. 
     '''
@@ -48,14 +49,14 @@ def potential_fraud_subgraph(unfrozen_graph):
     return unfrozen_graph
 
 
-def potential_fraud_score(graph, weight=0.7):
+def potential_fraud_score(graph, weight=1):
     ''' 4. calculate the total number of potential fraud count_fraud_indicators
         5. calculate total number of possible relationships
         6. return the community fraud score
         '''
     sum_fraud_edges = 0
     for node1, node2, data in list(graph.edges(data=True)):
-        if data['properties']['weight'] == 2:
+        if data['properties']['weight'] <= 2:
             sum_fraud_edges += 1
 
     total_nodes = graph.number_of_nodes()
@@ -64,15 +65,31 @@ def potential_fraud_score(graph, weight=0.7):
     return weighted_density
 
 
-def community_score(G, community, d_weight=0.2, f_weight=0.8):
+def log_transform(score1, score2):
+    return score1 + math.log(score2, 10)
+
+
+def community_score(G, community, d_weight=1, f_weight=1, type='weighted'):
     unfrozen_graph = make_unfrozen_subgraph(G, community)
-    density = community_density(unfrozen_graph, weight=d_weight)
-    fraud_subgraph = potential_fraud_subgraph(unfrozen_graph)
-    fraud_density = potential_fraud_score(fraud_subgraph, weight=f_weight)
-    score = density + fraud_density
-    print(f'density: {density} ' \
-          f'fraud_density: {fraud_density} ' \
-          f'score: {score}' ) 
+    if type == 'weighted':
+        density = community_density(unfrozen_graph, weight=d_weight)
+        fraud_subgraph = potential_fraud_subgraph(unfrozen_graph)
+        fraud_density = potential_fraud_score(fraud_subgraph, weight=f_weight)
+        score = density + fraud_density
+        print(f'density: {density} ' \
+            f'fraud_density: {fraud_density} ' \
+            f'score: {score}' ) 
+    elif type == 'log':
+        density = community_density(unfrozen_graph, weight=1)
+        fraud_subgraph = potential_fraud_subgraph(unfrozen_graph)
+        fraud_density = potential_fraud_score(fraud_subgraph, weight=1)
+        plus_one = fraud_density + 1
+        score = log_transform(density, plus_one)
+        print(f'density: {density} ' \
+            f'fraud_density: {fraud_density} ' \
+            f'score: {score}' ) 
+    else:
+        print('type must be weighted or log')
     return score
 
 def graph_to_pandas(graph,debug=False):
