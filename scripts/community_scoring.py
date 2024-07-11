@@ -310,4 +310,4 @@ def get_fraud_perc_table(G,communities):
     all_indicators_df = pd.concat([all_indicators_df,df_indicators])  # Append to the main DataFrame
 
   all_indicators_df = all_indicators_df.set_index('Community_id')
-  all_indicators_df
+  return all_indicators_df
