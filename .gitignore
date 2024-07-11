@@ -5,3 +5,4 @@ env
 *.config
 raw-data/
 test.py
+.DS_Store
