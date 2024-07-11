@@ -222,7 +222,6 @@ def get_indicator_type(df_nodes, df_edges):
     source_nodes = pd.concat([source_nodes.drop('properties', axis=1), source_nodes_props], axis=1)
     source_nodes = source_nodes.merge(high_weight_part_of[['source', 'weight']], left_index=True, right_on='source')
     source_nodes = source_nodes.set_index('source')
-    print(source_nodes.shape)
 
     # Combine target and source nodes
     source_target_nodes = pd.concat([target_nodes, source_nodes])
