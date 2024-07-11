@@ -302,6 +302,7 @@ def get_fraud_perc_table(G,communities):
     """
   all_indicators_df = pd.DataFrame()
   for idx,community in enumerate(communities):
+    print(idx)
     community_subgraph = make_unfrozen_subgraph(G,community)
     fraud_subgraph = potential_fraud_subgraph(community_subgraph)
     df_n_fraud, df_e_fraud = graph_to_pandas(fraud_subgraph,False)
