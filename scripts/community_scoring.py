@@ -300,7 +300,7 @@ def get_fraud_perc_table(G,communities):
       pandas.DataFrame: A DataFrame where each row represents a community (identified by the 'Community_id' index)
                         and the columns contain the calculated percentage-based fraud indicators.
     """
-  all_indicators_df = pd.DataFrame() 
+  all_indicators_df = pd.DataFrame()
   for idx,community in enumerate(communities):
     community_subgraph = make_unfrozen_subgraph(G,community)
     fraud_subgraph = potential_fraud_subgraph(community_subgraph)
