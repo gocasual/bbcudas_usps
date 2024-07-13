@@ -39,7 +39,7 @@ def potential_fraud_subgraph(unfrozen_graph):
        3. filter the subgraph for nodes that could be potential fraud relationships
        '''
     for node, data in list(unfrozen_graph.nodes(data=True)):
-        if 'labels' in data and 'destination' in data['labels']:
+        if 'destination' in data['label']:
             unfrozen_graph.remove_node(node)
     
     for node1, node2, data in list(unfrozen_graph.edges(data=True)):
@@ -54,13 +54,13 @@ def potential_fraud_score(graph, weight=1):
         5. calculate total number of possible relationships
         6. return the community fraud score
         '''
-    sum_fraud_edges = 0
+    count_fraud_edges = 0
     for node1, node2, data in list(graph.edges(data=True)):
-        if data['properties']['weight'] <= 2:
-            sum_fraud_edges += 1
+        if data['properties']['weight'] >= 2:
+            count_fraud_edges += 1
 
     total_nodes = graph.number_of_nodes()
-    fraud_density = (2 * sum_fraud_edges) / (total_nodes * (total_nodes - 1))
+    fraud_density = (2 * count_fraud_edges) / (total_nodes * (total_nodes - 1))
     weighted_density = fraud_density * weight
     return weighted_density
 
@@ -68,7 +68,16 @@ def potential_fraud_score(graph, weight=1):
 def log_transform(score1, score2):
     return score1 + math.log(score2, 10)
   
- 
+def rescale(score1, score2):
+    if score2 == 0:
+        return score1
+    elif score2 > score1:
+        return score2 + score1
+    elif score1/score2 >= 10:
+        plus1 = score1
+        return score1 + math.log(plus1, 10)
+    else:
+        return score1 + score2
 def community_score(G, community, d_weight=1, f_weight=1, type='weighted',verbose = False):
 
     unfrozen_graph = make_unfrozen_subgraph(G, community)
