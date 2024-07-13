@@ -67,9 +67,10 @@ def potential_fraud_score(graph, weight=1):
 
 def log_transform(score1, score2):
     return score1 + math.log(score2, 10)
-
-
+  
+ 
 def community_score(G, community, d_weight=1, f_weight=1, type='weighted',verbose = False):
+
     unfrozen_graph = make_unfrozen_subgraph(G, community)
     if type == 'weighted':
         density = community_density(unfrozen_graph, weight=d_weight)
@@ -94,6 +95,7 @@ def community_score(G, community, d_weight=1, f_weight=1, type='weighted',verbos
         print('type must be weighted or log')
     return density,fraud_density,score
 
+  
 def graph_to_pandas(graph,debug=False):
   """
   Converts a NetworkX graph to Pandas DataFrames for nodes and edges.
@@ -123,6 +125,7 @@ def graph_to_pandas(graph,debug=False):
     print(f'Edges:\n',df_edges['type_'].value_counts())  # Print edge type counts
 
   return df_nodes, df_edges
+
 
 def get_perc_fraud_indicators(df_edges, df_nodes):
     """
@@ -283,6 +286,7 @@ def get_communities_stats(G,communities):
   # Create a Pandas DataFrame from the dictionary
   df = pd.DataFrame(data)
   return df
+
 
 def get_fraud_perc_table(G,communities):
   """
