@@ -6,3 +6,4 @@ env
 raw-data/
 test.py
 .DS_Store
+/scripts/__pycache__/
