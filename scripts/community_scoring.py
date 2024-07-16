@@ -139,36 +139,27 @@ def get_perc_fraud_indicators(df_edges, df_nodes):
         .rename(columns={'type_': 'type', 'count': 'weight_count'})
     )
 
-    # Special Handling for 'part_of' Edge Type
-    if 'part_of' in df_weights['type'].values:  # Check if 'part_of' type exists
-        #print('Getting counts for the two indicator in the part of edge...')
+    df_part_of = get_indicator_type(df_nodes, df_edges)  
 
-        # Placeholder for get_indicator_type function
-        df_part_of = get_indicator_type(df_nodes, df_edges)  
+    # Remove the 'part_of' entry from the original weighted counts
+    df_weights = df_weights[df_weights['type'] != 'part_of']
 
-        # Remove the 'part_of' entry from the original weighted counts
-        df_weights = df_weights[df_weights['type'] != 'part_of']
+    # Combine the original weighted counts with the modified 'part_of' counts
+    df_weights_mod = pd.concat([df_weights, df_part_of])
 
-        # Combine the original weighted counts with the modified 'part_of' counts
-        df_weights_mod = pd.concat([df_weights, df_part_of])
+    # Merge the type counts with the potentially modified weight counts
+    df_merged = pd.merge(df_type_counts, df_weights_mod, on='type', how='left')
 
-        # Merge the type counts with the potentially modified weight counts
-        df_merged = pd.merge(df_type_counts, df_weights_mod, on='type', how='left')
+    # Prioritize the 'new_type' column (from get_indicator_type) over the original 'type'
+    df_merged['new_type'] = df_merged['new_type'].combine_first(df_merged['type'])
+    df_merged = (df_merged.fillna({'weight_count': 0})  # Fill missing values with 0
+                  .drop('type', axis=1)  # Drop the original 'type' column
+                  .rename(columns={'new_type': 'type'}))  # Rename the new type column
 
-        # Prioritize the 'new_type' column (from get_indicator_type) over the original 'type'
-        df_merged['new_type'] = df_merged['new_type'].combine_first(df_merged['type'])
-        df_merged = (df_merged.fillna({'weight_count': 0})  # Fill missing values with 0
-                      .drop('type', axis=1)  # Drop the original 'type' column
-                      .rename(columns={'new_type': 'type'}))  # Rename the new type column
-
-    else:  # No 'part_of' edges, merge type counts with original weight counts directly
-        df_merged = pd.merge(df_type_counts, df_weights, on='type', how='left')
-        df_merged = df_merged.fillna(0)
     # Calculate percentage of weighted edges per type
     df_merged['pct'] = df_merged['weight_count'] / df_merged['count'] * 100
 
     return df_merged
-
 
 def get_indicator_type(df_nodes, df_edges):
     """
@@ -188,7 +179,7 @@ def get_indicator_type(df_nodes, df_edges):
     """
 
     # Filter for high-weight 'part_of' edges
-    high_weight_part_of = df_edges[(df_edges['type_'] == 'part_of') & (df_edges['weight'] > 1)]
+    high_weight_part_of = df_edges[(df_edges['type_'] == 'part_of')]
     
     # Get node properties for target nodes of high-weight 'part_of' edges
     target_nodes_ids = high_weight_part_of['target'].tolist()
@@ -240,12 +231,20 @@ def get_communities_stats(G,communities):
   scores = []
   num_nodes = []
   num_edges = []
+  graph_details = pd.DataFrame()
+  fraud_details = pd.DataFrame()
   # Loop through communities and collect data
   for index,community in enumerate(communities):
-    density, fraud_density, score = community_score(G, community, type='log')
+    density, fraud_density, score = community_score(G, community)
     community_subgraph = make_unfrozen_subgraph(G,community)
     nodes = community_subgraph.number_of_nodes()
     edges = community_subgraph.number_of_edges()
+    
+    temp_g = count_types(index,community_subgraph)
+    graph_details = pd.concat([graph_details,temp_g])
+
+    temp_f = get_fraud_perc(index,community_subgraph)
+    fraud_details = pd.concat([fraud_details,temp_f])
 
     community_id.append(index)
     densities.append(density)
@@ -265,33 +264,27 @@ def get_communities_stats(G,communities):
 
   # Create a Pandas DataFrame from the dictionary
   df = pd.DataFrame(data)
+  df_details = graph_details.join(fraud_details, how='left')
+  df = df.join(df_details, how='left').set_index('Community_id')
+  df = df.fillna(0)
   return df
 
+def get_fraud_perc(idx,graph):
+  fraud_subgraph = potential_fraud_subgraph(graph)
+  n,e = graph_to_pandas(fraud_subgraph,False)
+  df_indicators = get_perc_fraud_indicators(e,n).assign(Community_id=lambda df:idx)
+  df_indicators = df_indicators.pivot( index ='Community_id' ,columns='type', values='pct').add_suffix('_fraud_pct')
+  return df_indicators
 
-def get_fraud_perc_table(G,communities):
+
+def count_types(id,subgraph):
   """
-  Calculates and aggregates fraud-related percentage indicators for multiple communities within a graph.
+  Counts the occurrences of node labels and edge types and returns them as a dataframe.
+  """
+  nodes_df, edges_df = graph_to_pandas(subgraph,False)
+  nodes_df['labels'] = nodes_df['labels'].apply(str).str.extract(r'\'(\w+)\'')
+  e_row = edges_df['type_'].value_counts().to_frame().transpose().reset_index().drop('index',axis =1 ).add_suffix('_edges').assign(Community_id=lambda df:id).set_index('Community_id')
+  n_row = nodes_df['labels'].value_counts().to_frame().transpose().reset_index().drop('index',axis =1 ).add_suffix('_nodes').assign(Community_id=lambda df:id).set_index('Community_id')
+  df = n_row.join(e_row)
+  return df
 
-  This function iterates through a list of communities, extracts subgraphs relevant to potential fraud,
-  and computes various percentage-based fraud indicators. The results are compiled into a pandas DataFrame.
-
-  Args:
-      G (networkx.Graph): The input graph.
-      communities: A list of communities
-                    to analyze within the graph.
-
-  Returns:
-      pandas.DataFrame: A DataFrame where each row represents a community (identified by the 'Community_id' index)
-                        and the columns contain the calculated percentage-based fraud indicators.
-    """
-  all_indicators_df = pd.DataFrame()
-  for idx,community in enumerate(communities):
-    community_subgraph = make_unfrozen_subgraph(G,community)
-    fraud_subgraph = potential_fraud_subgraph(community_subgraph)
-    df_n_fraud, df_e_fraud = graph_to_pandas(fraud_subgraph,False)
-    df_indicators = get_perc_fraud_indicators(df_e_fraud,df_n_fraud)
-    df_indicators['Community_id'] = idx
-    all_indicators_df = pd.concat([all_indicators_df,df_indicators])  # Append to the main DataFrame
-
-  all_indicators_df = all_indicators_df.set_index('Community_id')
-  return all_indicators_df
