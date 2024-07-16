@@ -13,12 +13,6 @@ import pandas as pd
 def make_unfrozen_subgraph(G, community):
     sub_graph = G.subgraph(community)
     unfrozen_graph = nx.Graph(sub_graph)
-    for node, data in list(unfrozen_graph.nodes(data=True)):
-        if 'labels' in data and 'manifest' in data['labels']:
-            unfrozen_graph.remove_node(node)
-    for node1, node2, data in list(unfrozen_graph.edges(data=True)):
-        if data['type_'] in ['attaches_to']:
-            unfrozen_graph.remove_edge(node1, node2)
     return unfrozen_graph
 
 
@@ -27,19 +21,19 @@ def community_density(unfrozen_graph, weight=1):
     calculate and return the density of a given community. 
     '''
     density = nx.density(unfrozen_graph)
-    weighted_density = density * weight
-    return weighted_density
+    return density
 
 
 def potential_fraud_subgraph(unfrozen_graph):
-    '''1. get nodes in community
-       2. create a subgraph
-       2a. drop all nodes with label 'destination'
-       2b. remove all edges with label 'goes_to' and 'mails'
-       3. filter the subgraph for nodes that could be potential fraud relationships
-       '''
+    '''
+    1. get nodes in community
+    2. create a subgraph
+    2a. drop all nodes with label 'destination'
+    2b. remove all edges with label 'goes_to' and 'mails'
+    3. filter the subgraph for nodes that could be potential fraud relationships
+    '''
     for node, data in list(unfrozen_graph.nodes(data=True)):
-        if 'destination' in data['label']:
+        if data['labels'] in ['destination']:
             unfrozen_graph.remove_node(node)
     
     for node1, node2, data in list(unfrozen_graph.edges(data=True)):
@@ -49,11 +43,12 @@ def potential_fraud_subgraph(unfrozen_graph):
     return unfrozen_graph
 
 
-def potential_fraud_score(graph, weight=1):
-    ''' 4. calculate the total number of potential fraud count_fraud_indicators
-        5. calculate total number of possible relationships
-        6. return the community fraud score
-        '''
+def potential_fraud_score(graph):
+    ''' 
+    4. calculate the total number of potential fraud count_fraud_indicators
+    5. calculate total number of possible relationships
+    6. return the community fraud score
+    '''
     count_fraud_edges = 0
     for node1, node2, data in list(graph.edges(data=True)):
         if data['properties']['weight'] >= 2:
@@ -61,48 +56,24 @@ def potential_fraud_score(graph, weight=1):
 
     total_nodes = graph.number_of_nodes()
     fraud_density = (2 * count_fraud_edges) / (total_nodes * (total_nodes - 1))
-    weighted_density = fraud_density * weight
-    return weighted_density
+    return fraud_density
 
 
-def log_transform(score1, score2):
-    return score1 + math.log(score2, 10)
+def geo_mean(a, b):
+    return math.sqrt(a * b)
   
-def rescale(score1, score2):
-    if score2 == 0:
-        return score1
-    elif score2 > score1:
-        return score2 + score1
-    elif score1/score2 >= 10:
-        plus1 = score1
-        return score1 + math.log(plus1, 10)
-    else:
-        return score1 + score2
-def community_score(G, community, d_weight=1, f_weight=1, type='weighted',verbose = False):
-
+ 
+def community_score(G, community, verbose = False):
     unfrozen_graph = make_unfrozen_subgraph(G, community)
-    if type == 'weighted':
-        density = community_density(unfrozen_graph, weight=d_weight)
-        fraud_subgraph = potential_fraud_subgraph(unfrozen_graph)
-        fraud_density = potential_fraud_score(fraud_subgraph, weight=f_weight)
-        score = density + fraud_density
-        if verbose:
-            print(f'density: {density} ' \
-                f'fraud_density: {fraud_density} ' \
-                f'score: {score}' ) 
-    elif type == 'log':
-        density = community_density(unfrozen_graph, weight=1)
-        fraud_subgraph = potential_fraud_subgraph(unfrozen_graph)
-        fraud_density = potential_fraud_score(fraud_subgraph, weight=1)
-        plus_one = fraud_density + 1
-        score = log_transform(density, plus_one)
-        if verbose:
-            print(f'density: {density} ' \
-                f'fraud_density: {fraud_density} ' \
-                f'score: {score}' ) 
-    else:
-        print('type must be weighted or log')
-    return density,fraud_density,score
+    density = community_density(unfrozen_graph)
+    fraud_subgraph = potential_fraud_subgraph(unfrozen_graph)
+    fraud_density = potential_fraud_score(fraud_subgraph)
+    score = geo_mean(density, fraud_density)
+    if verbose:
+        print(f'density: {density} ' \
+            f'fraud_density: {fraud_density} ' \
+            f'score: {score}' ) 
+    return density, fraud_density, score
 
   
 def graph_to_pandas(graph,debug=False):
