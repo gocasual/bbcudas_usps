@@ -161,51 +161,27 @@ def get_perc_fraud_indicators(df_edges, df_nodes):
 
     return df_merged
 
-def get_indicator_type(df_nodes, df_edges):
+def get_indicator_type(df_nodes,df_edges):
     """
-    Analyzes 'part_of' edges with weight > 1 to identify potential fraud indicators.
-
-    Args:
-        df_nodes (DataFrame): DataFrame with node information, including a 'properties' column 
-                             containing a dictionary with properties like 'manifest' and 'labels'.
-        df_edges (DataFrame): DataFrame with edge information, including columns 'source', 'target', 
-                             'type_', and 'weight'.
-
-    Returns:
-        DataFrame: A DataFrame with the following columns:
-            - 'type': Always 'part_of'.
-            - 'new_type': Either 'part_of_mismatch' or 'part_of_manifest'.
-            - 'weight_count': The count of edges falling into the new_type category.
+    
     """
-
-    # Filter for high-weight 'part_of' edges
-    high_weight_part_of = df_edges[(df_edges['type_'] == 'part_of')]
-    
-    # Get node properties for target nodes of high-weight 'part_of' edges
-    target_nodes_ids = high_weight_part_of['target'].tolist()
-    target_nodes = df_nodes[df_nodes.index.isin(target_nodes_ids)].copy()
-    target_nodes_props = target_nodes['properties'].apply(pd.Series)
-    target_nodes = pd.concat([target_nodes.drop('properties', axis=1), target_nodes_props], axis=1)
-    target_nodes = target_nodes.merge(high_weight_part_of[['target', 'weight']], left_index=True, right_on='target')
-    target_nodes = target_nodes.set_index('target')
-    
-    # Get node properties for source nodes of high-weight 'part_of' edges
-    source_nodes_ids = high_weight_part_of['source'].tolist()
-    source_nodes = df_nodes[df_nodes.index.isin(source_nodes_ids)].copy()
-    source_nodes_props = source_nodes['properties'].apply(pd.Series)
-    source_nodes = pd.concat([source_nodes.drop('properties', axis=1), source_nodes_props], axis=1)
-    source_nodes = source_nodes.merge(high_weight_part_of[['source', 'weight']], left_index=True, right_on='source')
-    source_nodes = source_nodes.set_index('source')
-
-    # Combine target and source nodes
-    source_target_nodes = pd.concat([target_nodes, source_nodes])
+    # Get node properties
+    nodes_props = df_nodes['properties'].apply(pd.Series)
+    nodes = pd.concat([df_nodes.drop('properties', axis=1), nodes_props], axis=1)
 
     # Filter for nodes where the 'labels' property is equal to a frozenset containing 'label'
-    source_target_nodes = source_target_nodes[source_target_nodes['labels'] == frozenset({'label'})].drop_duplicates()
+    nodes = nodes[nodes['labels'] == frozenset({'label'})]
+    #merge with df_edges to get weights
+    melted = (df_edges.melt(id_vars=['weight'],
+                            value_vars=['source', 'target'],
+                            var_name='source_or_target', 
+                            value_name='matching_id').
+              groupby('matching_id')['weight'].max().reset_index())
 
+    
     # Create a DataFrame for calculations
-    df = source_target_nodes.copy()[['manifest', 'weight']]
-
+    df = nodes.merge(melted, left_index=True, right_on='matching_id', how='left').copy()[['manifest', 'weight']]
+    
     # Create 'part_of_mismatch' indicator
     df.loc[:,'part_of_mismatch'] = (
     ((df['manifest'] == False) & (df['weight'] == 4)) | 
