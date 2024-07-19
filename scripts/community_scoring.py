@@ -32,6 +32,13 @@ def potential_fraud_subgraph(unfrozen_graph):
     2b. remove all edges with label 'goes_to' and 'mails'
     3. filter the subgraph for nodes that could be potential fraud relationships
     '''
+    '''
+    1. get nodes in community
+    2. create a subgraph
+    2a. drop all nodes with label 'destination'
+    2b. remove all edges with label 'goes_to' and 'mails'
+    3. filter the subgraph for nodes that could be potential fraud relationships
+    '''
     for node, data in list(unfrozen_graph.nodes(data=True)):
         if data['labels'] in ['destination']:
             unfrozen_graph.remove_node(node)
@@ -51,6 +58,8 @@ def potential_fraud_score(graph):
     '''
     count_fraud_edges = 0
     for node1, node2, data in list(graph.edges(data=True)):
+        if data['properties']['weight'] >= 2:
+            count_fraud_edges += 1
         if data['properties']['weight'] >= 2:
             count_fraud_edges += 1
 
@@ -75,7 +84,11 @@ def community_score(G, community, verbose = False):
             f'score: {score}' ) 
     return density, fraud_density, score
 
-  
+
+def select_community(df, communities, id):
+   return [communities[df.iloc[id,0]]]
+
+
 def graph_to_pandas(graph,debug=False):
   """
   Converts a NetworkX graph to Pandas DataFrames for nodes and edges.
@@ -161,6 +174,7 @@ def get_perc_fraud_indicators(df_edges, df_nodes):
 
     return df_merged
 
+
 def get_indicator_type(df_nodes,df_edges):
     """
     
@@ -198,7 +212,6 @@ def get_indicator_type(df_nodes,df_edges):
     return df_sums
 
 
-
 def get_communities_stats(G,communities):
   # Initialize lists to store the data
   community_id = []
@@ -211,6 +224,7 @@ def get_communities_stats(G,communities):
   fraud_details = pd.DataFrame()
   # Loop through communities and collect data
   for index,community in enumerate(communities):
+    density, fraud_density, score = community_score(G, community)
     density, fraud_density, score = community_score(G, community)
     community_subgraph = make_unfrozen_subgraph(G,community)
     nodes = community_subgraph.number_of_nodes()
@@ -243,7 +257,52 @@ def get_communities_stats(G,communities):
   df_details = graph_details.join(fraud_details, how='left')
   df = df.join(df_details, how='left').set_index('Community_id')
   df = df.fillna(0)
+  df = df[df['Fraud_Density'] != 0]
   return df
+
+
+def composition_percentages(df_sorted):
+    df = df_sorted.copy()
+    node_columns = [col for col in df.columns if col.endswith('_nodes')]
+    for col in node_columns:
+        new_col_name = col + '_perc'
+        df[new_col_name] = df[col] / df['N_Nodes']
+    edge_columns = [col for col in df.columns if col.endswith('_edges')]
+    for col in edge_columns:
+        new_col_name = col + '_perc'
+        df[new_col_name] = df[col] / df['N_Edges']
+
+    return df
+
+
+def get_fraud_perc_table(G,communities):
+  """
+  Calculates and aggregates fraud-related percentage indicators for multiple communities within a graph.
+
+  This function iterates through a list of communities, extracts subgraphs relevant to potential fraud,
+  and computes various percentage-based fraud indicators. The results are compiled into a pandas DataFrame.
+
+  Args:
+      G (networkx.Graph): The input graph.
+      communities: A list of communities
+                    to analyze within the graph.
+
+  Returns:
+      pandas.DataFrame: A DataFrame where each row represents a community (identified by the 'Community_id' index)
+                        and the columns contain the calculated percentage-based fraud indicators.
+    """
+  all_indicators_df = pd.DataFrame()
+  for idx,community in enumerate(communities):
+    community_subgraph = make_unfrozen_subgraph(G,community)
+    fraud_subgraph = potential_fraud_subgraph(community_subgraph)
+    df_n_fraud, df_e_fraud = graph_to_pandas(fraud_subgraph,False)
+    df_indicators = get_fraud_perc(df_e_fraud,df_n_fraud)
+    df_indicators['Community_id'] = idx
+    all_indicators_df = pd.concat([all_indicators_df,df_indicators])  # Append to the main DataFrame
+
+  all_indicators_df = all_indicators_df.set_index('Community_id')
+  return all_indicators_df
+
 
 def get_fraud_perc(idx,graph):
   fraud_subgraph = potential_fraud_subgraph(graph)
@@ -263,4 +322,3 @@ def count_types(id,subgraph):
   n_row = nodes_df['labels'].value_counts().to_frame().transpose().reset_index().drop('index',axis =1 ).add_suffix('_nodes').assign(Community_id=lambda df:id).set_index('Community_id')
   df = n_row.join(e_row)
   return df
-
