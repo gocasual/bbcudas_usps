@@ -33,11 +33,19 @@ def test_make_unfrozen_subgraph():
 
 def test_community_density():
     graph = make_unfrozen_subgraph(G, community1)
+<<<<<<< HEAD
     density1 = community_density(graph)
     density2 = community_density(graph)
     assert density1 >= 0
     assert density2 >= 0
     assert density2 / density1 == 1
+=======
+    density1 = community_density(graph, weight = 1)
+    density2 = community_density(graph, weight = 2)
+    assert density1 >= 0
+    assert density2 >= 0
+    assert density2 / density1 == 2
+>>>>>>> main
     assert density1 <= 1
 
 
@@ -56,6 +64,7 @@ def test_potential_fraud_subgraph():
 def test_potential_fraud_score():
     unfrozen = make_unfrozen_subgraph(G, community1)
     sub = potential_fraud_subgraph(unfrozen)
+<<<<<<< HEAD
     score1 = potential_fraud_score(sub)
     assert score1 == (1/3)
 
@@ -72,6 +81,28 @@ def test_geo_mean():
 def test_community_score():
     score1 = community_score(G, community1)
     assert score1 == math.sqrt((2/3)*(1/3))
+=======
+    score1 = potential_fraud_score(sub, weight=1)
+    score2 = potential_fraud_score(sub, weight=2)
+    assert score1 == (1/3)
+    assert score2 == (2/3) 
+    assert score1 >= 0
+    assert score2 >= 0  
+
+
+def test_log_transform():
+    output1 = log_transform(1, 10)
+    assert output1 == 2
+
+
+def test_community_score():
+    score1 = community_score(G, community1, type='log')
+    score2 = community_score(G, community1, d_weight=1, f_weight=1, type='weighted')
+    score3 = community_score(G, community1, d_weight=0.0, f_weight=0.0, type='weighted')
+    assert score1 == 
+    assert score2 == 1.0 
+    assert score3 == 0
+>>>>>>> main
 
 
 
