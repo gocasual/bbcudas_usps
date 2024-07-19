@@ -22,7 +22,6 @@ def community_density(unfrozen_graph, weight=1):
     '''
     density = nx.density(unfrozen_graph)
     return density
-    return density
 
 
 def potential_fraud_subgraph(unfrozen_graph):
@@ -42,7 +41,6 @@ def potential_fraud_subgraph(unfrozen_graph):
     '''
     for node, data in list(unfrozen_graph.nodes(data=True)):
         if data['labels'] in ['destination']:
-        if data['labels'] in ['destination']:
             unfrozen_graph.remove_node(node)
     
     for node1, node2, data in list(unfrozen_graph.edges(data=True)):
@@ -59,13 +57,6 @@ def potential_fraud_score(graph):
     6. return the community fraud score
     '''
     count_fraud_edges = 0
-def potential_fraud_score(graph):
-    ''' 
-    4. calculate the total number of potential fraud count_fraud_indicators
-    5. calculate total number of possible relationships
-    6. return the community fraud score
-    '''
-    count_fraud_edges = 0
     for node1, node2, data in list(graph.edges(data=True)):
         if data['properties']['weight'] >= 2:
             count_fraud_edges += 1
@@ -75,17 +66,12 @@ def potential_fraud_score(graph):
     total_nodes = graph.number_of_nodes()
     fraud_density = (2 * count_fraud_edges) / (total_nodes * (total_nodes - 1))
     return fraud_density
-    fraud_density = (2 * count_fraud_edges) / (total_nodes * (total_nodes - 1))
-    return fraud_density
 
 
-def geo_mean(a, b):
-    return math.sqrt(a * b)
 def geo_mean(a, b):
     return math.sqrt(a * b)
   
  
-def community_score(G, community, verbose = False):
 def community_score(G, community, verbose = False):
     unfrozen_graph = make_unfrozen_subgraph(G, community)
     density = community_density(unfrozen_graph)
@@ -97,15 +83,10 @@ def community_score(G, community, verbose = False):
             f'fraud_density: {fraud_density} ' \
             f'score: {score}' ) 
     return density, fraud_density, score
-    density = community_density(unfrozen_graph)
-    fraud_subgraph = potential_fraud_subgraph(unfrozen_graph)
-    fraud_density = potential_fraud_score(fraud_subgraph)
-    score = geo_mean(density, fraud_density)
-    if verbose:
-        print(f'density: {density} ' \
-            f'fraud_density: {fraud_density} ' \
-            f'score: {score}' ) 
-    return density, fraud_density, score
+
+
+def select_community(df, communities, id):
+   return [communities[df.iloc[id,0]]]
 
 
 def graph_to_pandas(graph,debug=False):
@@ -193,6 +174,7 @@ def get_perc_fraud_indicators(df_edges, df_nodes):
 
     return df_merged
 
+
 def get_indicator_type(df_nodes,df_edges):
     """
     
@@ -228,7 +210,6 @@ def get_indicator_type(df_nodes,df_edges):
     df_sums['type'] = 'part_of'  # Add the original 'part_of' type
 
     return df_sums
-
 
 
 def get_communities_stats(G,communities):
@@ -276,6 +257,7 @@ def get_communities_stats(G,communities):
   df_details = graph_details.join(fraud_details, how='left')
   df = df.join(df_details, how='left').set_index('Community_id')
   df = df.fillna(0)
+  df = df[df['Fraud_Density'] != 0]
   return df
 
 
@@ -291,7 +273,6 @@ def composition_percentages(df_sorted):
         df[new_col_name] = df[col] / df['N_Edges']
 
     return df
-
 
 
 def get_fraud_perc_table(G,communities):
@@ -315,9 +296,29 @@ def get_fraud_perc_table(G,communities):
     community_subgraph = make_unfrozen_subgraph(G,community)
     fraud_subgraph = potential_fraud_subgraph(community_subgraph)
     df_n_fraud, df_e_fraud = graph_to_pandas(fraud_subgraph,False)
-    df_indicators = get_perc_fraud_indicators(df_e_fraud,df_n_fraud)
+    df_indicators = get_fraud_perc(df_e_fraud,df_n_fraud)
     df_indicators['Community_id'] = idx
     all_indicators_df = pd.concat([all_indicators_df,df_indicators])  # Append to the main DataFrame
 
   all_indicators_df = all_indicators_df.set_index('Community_id')
   return all_indicators_df
+
+
+def get_fraud_perc(idx,graph):
+  fraud_subgraph = potential_fraud_subgraph(graph)
+  n,e = graph_to_pandas(fraud_subgraph,False)
+  df_indicators = get_perc_fraud_indicators(e,n).assign(Community_id=lambda df:idx)
+  df_indicators = df_indicators.pivot( index ='Community_id' ,columns='type', values='pct').add_suffix('_fraud_pct')
+  return df_indicators
+
+
+def count_types(id,subgraph):
+  """
+  Counts the occurrences of node labels and edge types and returns them as a dataframe.
+  """
+  nodes_df, edges_df = graph_to_pandas(subgraph,False)
+  nodes_df['labels'] = nodes_df['labels'].apply(str).str.extract(r'\'(\w+)\'')
+  e_row = edges_df['type_'].value_counts().to_frame().transpose().reset_index().drop('index',axis =1 ).add_suffix('_edges').assign(Community_id=lambda df:id).set_index('Community_id')
+  n_row = nodes_df['labels'].value_counts().to_frame().transpose().reset_index().drop('index',axis =1 ).add_suffix('_nodes').assign(Community_id=lambda df:id).set_index('Community_id')
+  df = n_row.join(e_row)
+  return df
