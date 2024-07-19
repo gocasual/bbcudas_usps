@@ -75,7 +75,7 @@ def community_score(G, community, verbose = False):
             f'score: {score}' ) 
     return density, fraud_density, score
 
-  
+
 def graph_to_pandas(graph,debug=False):
   """
   Converts a NetworkX graph to Pandas DataFrames for nodes and edges.
@@ -266,6 +266,21 @@ def get_communities_stats(G,communities):
   # Create a Pandas DataFrame from the dictionary
   df = pd.DataFrame(data)
   return df
+
+
+def composition_percentages(df_sorted):
+    df = df_sorted.copy()
+    node_columns = [col for col in df.columns if col.endswith('_nodes')]
+    for col in node_columns:
+        new_col_name = col + '_perc'
+        df[new_col_name] = df[col] / df['N_Nodes']
+    edge_columns = [col for col in df.columns if col.endswith('_edges')]
+    for col in edge_columns:
+        new_col_name = col + '_perc'
+        df[new_col_name] = df[col] / df['N_Edges']
+
+    return df
+
 
 
 def get_fraud_perc_table(G,communities):
