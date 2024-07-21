@@ -7,7 +7,7 @@ from neo4j.data import Record
 import networkx as nx
 
 
-def graph_from_cypher(data):
+def graph_from_cypher(data, verbose=False):
     G = nx.MultiGraph()
 
     def add_node(node):
@@ -37,9 +37,9 @@ def graph_from_cypher(data):
                     else:
                         pass
         except (TypeError, AttributeError):
-            if TypeError:
+            if TypeError and verbose==True:
                 print('Node or Edge import error - Type error - continuing')
-            if AttributeError:
+            if AttributeError and verbose==True:
                 print('Node or Edge import error - Attribute error - continuing')
             pass
     
