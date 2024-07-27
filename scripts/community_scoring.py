@@ -10,6 +10,7 @@ import math
 import networkx as nx
 import pandas as pd
 
+
 def make_unfrozen_subgraph(G, community):
     sub_graph = G.subgraph(community)
     unfrozen_graph = nx.Graph(sub_graph)

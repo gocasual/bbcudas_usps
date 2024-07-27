@@ -19,6 +19,7 @@ load_dotenv()
 
 
 def louvain_community(G, weight='weight', seed=33):
+    # runs the Louvain Algorithm with added features
     print('Generating communities...')
     start = time.time()
     partition =community.louvain_communities(G, weight=weight, seed=seed)
@@ -35,6 +36,7 @@ def remove_singletons(communities):
 
 
 def select_communities(communities, n=3):
+    # from a list of communities, selects the N largest communities by node size
     sorted_communities = sorted(communities, key=len, reverse=True)
     top_communities = sorted_communities[:n]
     return top_communities
