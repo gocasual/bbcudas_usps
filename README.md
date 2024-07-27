@@ -14,12 +14,12 @@
 - To run locally do the following:
 1. pip install dependencies in the requirements.txt file in a virtual environment
 2. set up a file with file name: `.env`
-3. copy and paste the following into the `.env` file \n
-NEO4J_URI=neo4j+s://b91ef68f.databases.neo4j.io \n
-NEO4J_USERNAME=neo4j \n
-NEO4J_PASSWORD=(emailed separately) \n
-AURA_INSTANCEID=b91ef68f \n
-AURA_INSTANCENAME=Instance01 \n
+3. copy and paste the following into the `.env` file \
+NEO4J_URI=neo4j+s://b91ef68f.databases.neo4j.io \
+NEO4J_USERNAME=neo4j \
+NEO4J_PASSWORD=(emailed separately) \
+AURA_INSTANCEID=b91ef68f \
+AURA_INSTANCENAME=Instance01 \
 4. the neo4j password will be emailed out separately and must be included in the `NEO4J_PASSWORD` variable
 5. run the notebook with the appropriate kernel environment set
 
