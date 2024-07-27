@@ -1,12 +1,27 @@
-# USPS Counterfeit Label Detection
+# USPS Fraud Detection with Louvain Community Detection on a Graph Database
 
-## Blue Barracudas
-## Khalil Chughtai | Bryan Vega | Hunter Walden | Matthew Koziol | Rosa Prieto
+## George Mason University
+## Team Members: 
+1. Khalil Chughtai
+2. Bryan Vega
+3. Hunter Walden
+4. Matthew Koziol
+5. Rosa Prieto
 
-# Problem Introduction
-The USPS provides commercial shippers with unique Mailer Identification Numbers (MID) to manifest and pay for their postage.  Fraudulent shippers use a combination of hijacked MIDs, where a fraudulent shipper steals a MID assigned to a USPS customer, and unregistered MIDs, a MID that has not been setup to enter packages into the USPS package stream. USPS package fraud detection is currently a retroactive process to identify fraudulent packages.  The time lag creates an opportunity for fraudulent MIDs to go undetected while also providing time for fraudulent shippers to create new fraudulent MIDs before USPS can address.
+# How to run main_prod.ipynb
+**NOTE** This is the primary notebook that shows each step of the research. The vast majority of the code that processes the data, executes community detection and scoring, and creating visualizations is abstracted away in separate python modules in the `scripts` folder. These modules are imported into the main_prod.ipynb file to keep the file cleaner and easier to follow. 
 
-# Problem Definition
+- To run locally do the following:
+1. pip install dependencies in the requirements.txt file in a virtual environment
+2. set up a file with file name: `.env`
+3. copy and paste the following into the `.env` file
+NEO4J_URI=neo4j+s://b91ef68f.databases.neo4j.io
+NEO4J_USERNAME=neo4j
+NEO4J_PASSWORD=<emailed separately>
+AURA_INSTANCEID=b91ef68f
+AURA_INSTANCENAME=Instance01
+4. the neo4j password will be emailed out separately and must be included in the `NEO4J_PASSWORD` variable
+5. run the notebook with the appropriate kernel environment set
 
- Blue Barracudas has been tasked with developing an AI/ML algorithm that utilizes a sample of USPS shipment data to allow USPS to shorten the detection time of fraudulent package shipments. 
-
+## Assistance:
+- Please reach out to hwalden2@gmu.edu or htwalden@gmail.com if assistance is required. 
